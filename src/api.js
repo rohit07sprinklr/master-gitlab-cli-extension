@@ -11,8 +11,8 @@ app.listen(PORT, () => {
   console.log("Gitlab CLI listening at 4000...");
 });
 
-function wait(sec) {
-  return new Promise((res) => setTimeout(res, sec));
+function wait(millis) {
+  return new Promise((res) => setTimeout(res, millis));
 }
 
 let cliStatus = "IDLE"; // 'IN_PROGRESS'
@@ -113,7 +113,9 @@ app.get("/merge", async function (req, res) {
     console.log("end merge successfully");
     res.end();
   } catch (e) {
-    res.write(`error ${e.toString()}`);
+    res.write(`error: ${e.toString()}`);
+    await wait(100);
+    res.write(`ERROR`);
     console.error(e);
     console.log("end merge failure");
     res.end();
@@ -166,7 +168,9 @@ app.get("/rebase", async function (req, res) {
     console.log("end rebase successfully");
     res.end();
   } catch (e) {
-    res.write(`error ${e.toString()}`);
+    res.write(`error: ${e.toString()}`);
+    await wait(100);
+    res.write(`ERROR`);
     console.error(e);
     console.log("end rebase failure");
     res.end();

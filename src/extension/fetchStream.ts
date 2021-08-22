@@ -18,7 +18,12 @@ function streamBody(body, onChunkReceive) {
 
             // Enqueue the next data chunk into our target stream
             controller.enqueue(value);
-            onChunkReceive(decoder.decode(value, { stream: true }));
+            const chunkString = decoder.decode(value, { stream: true });
+            if (chunkString === "ERROR") {
+              throw Error(chunkString);
+              return;
+            }
+            onChunkReceive(chunkString);
           }
 
           // Close the stream
