@@ -1,0 +1,17 @@
+{
+  "name": "gitlab-cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "esbuild": "^0.12.21",
+    "express": "^4.17.1",
+    "simple-git": "^2.44.0"
+  },
+  "scripts": {
+    "build": "rm -rf dist && node build.js"
+  },
+  "devDependencies": {
+    "prettier": "^2.3.2"
+  }
+}
