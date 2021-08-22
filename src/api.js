@@ -8,7 +8,7 @@ const PORT = 4000;
 const app = express();
 
 app.listen(PORT, () => {
-  console.log("Gitlab CLI merge service listening at 4000...");
+  console.log("Gitlab CLI listening at 4000...");
 });
 
 function wait(sec) {
@@ -46,14 +46,14 @@ app.get("/handshake", async function (req, res) {
         .end();
       return;
     }
-    res.writeHead(503, {
+    res.writeHead(512, {
       "Content-Type": "text/plain",
       "Transfer-Encoding": "chunked",
       "access-control-allow-origin": "*",
     });
-    res.write("wip");
+    res.write("CLI busy");
     await finishExisting();
-    res.write("free");
+    res.write("CLI free");
     res.end();
     return;
   }

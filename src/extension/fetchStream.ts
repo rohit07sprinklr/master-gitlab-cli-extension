@@ -1,8 +1,7 @@
-function fetchStream(url, onChunkReceive) {
+function streamBody(body, onChunkReceive) {
   const decoder = new TextDecoder("utf-8");
 
-  return fetch(url)
-    .then((r) => r.body)
+  return Promise.resolve(body)
     .then((rs) => {
       // @ts-ignore
       const reader = rs.getReader();
@@ -32,4 +31,18 @@ function fetchStream(url, onChunkReceive) {
     .then((response) => response.text());
 }
 
+function fetchStream(url, onChunkReceive) {
+  return fetch(url)
+    .then((r) => {
+      if (r.status >= 400) {
+        return r.text().then((text) => {
+          throw Error(text);
+        });
+      }
+      return r.body;
+    })
+    .then((body) => streamBody(body, onChunkReceive));
+}
+
 export { fetchStream };
+export { streamBody };

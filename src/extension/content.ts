@@ -5,22 +5,36 @@ import {
   isAlreadyMerged,
 } from "./domQueries";
 
-import { fetchStream } from "./fetchStream";
+import { fetchStream, streamBody } from "./fetchStream";
 
 function isReady() {
   return getSourceBranch() && getTargetBranch();
 }
 
-function insertMergeViaCLIButton() {
+function renderButton() {
   const button = document.createElement("button");
+  button.classList.add("btn", "btn-danger", "js-gitlab-cli-button");
+  return button;
+}
+
+function setContentInDesc(content) {
+  const el = document.getElementById("gitlab-cli-desc");
+  el.style.display = "block";
+  el.textContent = content;
+}
+
+function clearContentInDesc() {
+  const el = document.getElementById("gitlab-cli-desc");
+  el.style.display = "none";
+  el.textContent = "";
+}
+
+function renderMergeButton(sourceBranch, targetBranch) {
+  const button = renderButton();
   button.textContent = "Merge Via CLI";
-  button.style.position = "fixed";
-  button.style.top = "50px";
-  button.style.left = "50px";
-  const sourceBranch = getSourceBranch();
-  const targetBranch = getTargetBranch();
+  button.id = "gitlab-cli-merge";
   button.onclick = async () => {
-    button.disabled = true;
+    disableButtons();
     try {
       await fetchStream(
         `http://localhost:4000/merge?location=${
@@ -29,7 +43,8 @@ function insertMergeViaCLIButton() {
           sourceBranch!
         )}&target=${encodeURIComponent(targetBranch!)}`,
         (chunkString) => {
-          button.textContent = chunkString;
+          button.textContent = "Merging";
+          setContentInDesc(chunkString);
         }
       ).then((res) => {
         // console.log(res);
@@ -37,78 +52,134 @@ function insertMergeViaCLIButton() {
         window.location.reload();
       });
     } catch (e) {
-      button.disabled = false;
+      enableButtons();
       button.textContent = "Retry Merge";
     }
   };
-  document.body.appendChild(button);
+  return button;
 }
 
-function insertRebaseViaCLIButton() {
-  const button = document.createElement("button");
+function renderRebaseButton(sourceBranch, targetBranch) {
+  const button = renderButton();
   button.textContent = "Rebase Via CLI";
-  button.style.position = "fixed";
-  button.style.top = "100px";
-  button.style.left = "50px";
-  const sourceBranch = getSourceBranch();
-  const targetBranch = getTargetBranch();
+  button.id = "gitlab-cli-rebase";
   button.onclick = async () => {
-    button.disabled = true;
+    disableButtons();
     try {
-      const decoder = new TextDecoder("utf-8");
-
-      await fetch(
+      await fetchStream(
         `http://localhost:4000/rebase?location=${
           window.location
         }&source=${encodeURIComponent(
           sourceBranch!
-        )}&target=${encodeURIComponent(targetBranch!)}`
-      )
-        .then((r) => r.body)
-        .then((rs) => {
-          // @ts-ignore
-          const reader = rs.getReader();
-
-          return new ReadableStream({
-            async start(controller) {
-              while (true) {
-                const { done, value } = await reader.read();
-
-                // When no more data needs to be consumed, break the reading
-                if (done) {
-                  break;
-                }
-
-                // Enqueue the next data chunk into our target stream
-                controller.enqueue(value);
-                button.textContent = decoder.decode(value, { stream: true });
-              }
-
-              // Close the stream
-              controller.close();
-              reader.releaseLock();
-            },
-          });
-        })
-        .then((rs) => new Response(rs))
-        .then((response) => response.text())
-        .then((res) => {
-          // console.log(res);
-          button.textContent = "Rebased";
-          window.location.reload();
-        });
+        )}&target=${encodeURIComponent(targetBranch!)}`,
+        (chunkString) => {
+          button.textContent = "Rebasing";
+          setContentInDesc(chunkString);
+        }
+      ).then((res) => {
+        // console.log(res);
+        button.textContent = "Rebased";
+        window.location.reload();
+      });
     } catch (e) {
-      button.disabled = false;
-      button.textContent = "Retry";
+      enableButtons();
+      button.textContent = "Retry Rebase";
     }
   };
-  document.body.appendChild(button);
+  return button;
 }
 
-function fetchHandshake() {
+function renderDescription() {
+  const descriptionAreaEl = document.createElement("p");
+  descriptionAreaEl.id = "gitlab-cli-desc";
+  descriptionAreaEl.style.display = "none";
+  descriptionAreaEl.style.marginTop = "8px";
+  descriptionAreaEl.style.marginBottom = "0px";
+
+  descriptionAreaEl.style.border = "1px solid #e5e5e5";
+  descriptionAreaEl.style.backgroundColor = "#fafafa";
+  descriptionAreaEl.style.padding = "12px";
+
+  return descriptionAreaEl;
+}
+
+function render() {
+  const rootDiv = document.createElement("div");
+  rootDiv.classList.add("mr-widget-heading", "append-bottom-default");
+
+  const containerDiv = document.createElement("div");
+  containerDiv.classList.add("mr-widget-content");
+
+  const buttonGroup = document.createElement("div");
+  buttonGroup.classList.add("d-flex");
+
+  const sourceBranch = getSourceBranch();
+  const targetBranch = getTargetBranch();
+
+  const mergeButton = renderMergeButton(sourceBranch, targetBranch);
+  const rebaseButton = renderRebaseButton(sourceBranch, targetBranch);
+  rebaseButton.style.marginLeft = "10px";
+
+  buttonGroup.appendChild(mergeButton);
+  buttonGroup.appendChild(rebaseButton);
+
+  containerDiv.appendChild(buttonGroup);
+  containerDiv.appendChild(renderDescription());
+
+  rootDiv.appendChild(containerDiv);
+  return rootDiv;
+}
+
+function insertInDOM() {
+  const referenceEl = document.querySelector(".mr-source-target");
+  const el = render();
+  referenceEl.classList.add("mr-widget-workflow");
+  referenceEl.parentElement.prepend(el);
+}
+
+function getButtons() {
+  return document.querySelectorAll(".js-gitlab-cli-button");
+}
+
+function disableButtons() {
+  getButtons().forEach((el) => {
+    el.disabled = true;
+  });
+}
+
+function enableButtons() {
+  getButtons().forEach((el) => {
+    el.disabled = false;
+  });
+}
+
+function initialise() {
   return fetch(
     `http://localhost:4000/handshake?location=${window.location}`
-  ).then((r) => r.status < 400);
+  ).then((r) => {
+    if (r.status === 200) {
+      insertInDOM();
+      return true;
+    }
+    if (r.status === 500) {
+      return false;
+    }
+    if (r.status === 512) {
+      insertInDOM();
+      const descEl = document.getElementById("gitlab-cli-desc");
+      setContentInDesc("CLI busy");
+      disableButtons();
+      streamBody(r.body, (chunkString) => {
+        descEl.textContent = chunkString;
+      }).then(() => {
+        clearContentInDesc();
+        enableButtons();
+      });
+      return false;
+    }
+
+    return false;
+  });
 }
 
 const main = () => {
@@ -116,10 +187,8 @@ const main = () => {
   const interval = setInterval(async () => {
     if (isReady()) {
       clearInterval(interval);
-      const isValid = await fetchHandshake();
-      if (!isAlreadyMerged() && isValid) {
-        insertMergeViaCLIButton();
-        insertRebaseViaCLIButton();
+      if (!isAlreadyMerged()) {
+        initialise();
       }
     }
   }, 1000);
