@@ -8,7 +8,7 @@ let config;
 try {
   config = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
 } catch (e) {
-  console.error("missing config.js");
+  console.error("missing config.json");
   process.exit(1);
 }
 
