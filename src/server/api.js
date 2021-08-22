@@ -2,7 +2,15 @@
 
 const express = require("express");
 const git = require("simple-git");
-const config = require("../config");
+const fs = require("fs");
+let config;
+
+try {
+  config = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
+} catch (e) {
+  console.error("missing config.js");
+  process.exit(1);
+}
 
 const PORT = 4000;
 const app = express();

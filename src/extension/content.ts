@@ -93,7 +93,8 @@ function renderDescription() {
   const descriptionAreaEl = document.createElement("p");
   descriptionAreaEl.id = "gitlab-cli-desc";
   descriptionAreaEl.style.display = "none";
-  descriptionAreaEl.style.marginTop = "8px";
+  descriptionAreaEl.style.borderRadius = "4px";
+  descriptionAreaEl.style.marginTop = "10px";
   descriptionAreaEl.style.marginBottom = "0px";
 
   descriptionAreaEl.style.border = "1px solid #e5e5e5";
