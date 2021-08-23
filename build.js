@@ -1,5 +1,4 @@
 const esbuild = require("esbuild");
-const fs = require("fs");
 
 Promise.all([
   esbuild.build({
@@ -18,39 +17,13 @@ Promise.all([
     const fs = require("fs");
     const filesToCopy = fs.readdirSync("src/extension/public");
     return Promise.all([
-      ...filesToCopy
-        .filter((file) => file !== "manifest.json")
-        .map((file) => {
-          return new Promise((resolve) =>
-            fs.copyFile(
-              `src/extension/public/${file}`,
-              `dist/extension/${file}`,
-              resolve
-            )
-          );
-        }),
-      new Promise((resolve) => {
-        const manifest = require("./src/extension/public/manifest.json");
-        const config = require("./config");
-
-        fs.writeFile(
-          "dist/extension/manifest.json",
-          JSON.stringify(
-            {
-              ...manifest,
-              content_scripts: [
-                {
-                  matches: config.repos.map(
-                    (repo) => `${repo.url}/-/merge_requests/*`
-                  ),
-                  js: ["./content.js"],
-                },
-              ],
-            },
-            null,
-            2
-          ),
-          resolve
+      ...filesToCopy.map((file) => {
+        return new Promise((resolve) =>
+          fs.copyFile(
+            `src/extension/public/${file}`,
+            `dist/extension/${file}`,
+            resolve
+          )
         );
       }),
       new Promise((res) => {

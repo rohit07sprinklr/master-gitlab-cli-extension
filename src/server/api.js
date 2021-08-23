@@ -73,22 +73,19 @@ app.get("/handshake", async function (req, res) {
 });
 
 app.get("/merge", async function (req, res) {
-  if (cliStatus !== "IDLE") {
-    res
-      .writeHead(500, {
-        "access-control-allow-origin": "*",
-      })
-      .write("WIP");
-
-    res.end();
-    return;
-  }
-  markWIP();
   res.writeHead(200, {
     "Content-Type": "text/plain",
     "Transfer-Encoding": "chunked",
     "access-control-allow-origin": "*",
   });
+  if (cliStatus !== "IDLE") {
+    res.write(`CLI Busy`);
+    await wait(100);
+    res.write(`ERROR`);
+    res.end();
+    return;
+  }
+  markWIP();
   try {
     const { source, target, location } = req.query;
     const path = config.repos.find((repo) =>
@@ -111,8 +108,8 @@ app.get("/merge", async function (req, res) {
 
     await git(path).raw("merge", "--no-ff", source, "--no-edit");
 
-    console.log(`merged, pushing ${target}...`);
-    res.write(`merged, pushing ${target}...`);
+    console.log(`merged, pushing ${target}`);
+    res.write(`merged, pushing ${target}`);
     await git(path).push("origin", target);
 
     console.log(`pushed ${target}`);
@@ -132,22 +129,20 @@ app.get("/merge", async function (req, res) {
 });
 
 app.get("/rebase", async function (req, res) {
-  if (cliStatus !== "IDLE") {
-    res
-      .writeHead(500, {
-        "access-control-allow-origin": "*",
-      })
-      .write("WIP");
-
-    res.end();
-    return;
-  }
-  markWIP();
   res.writeHead(200, {
     "Content-Type": "text/plain",
     "Transfer-Encoding": "chunked",
     "access-control-allow-origin": "*",
   });
+  if (cliStatus !== "IDLE") {
+    res.write(`CLI Busy`);
+    await wait(100);
+    res.write(`ERROR`);
+    res.end();
+    return;
+  }
+  markWIP();
+
   try {
     const { source, target, location } = req.query;
     const path = config.repos.find((repo) =>
@@ -166,8 +161,8 @@ app.get("/rebase", async function (req, res) {
     res.write(`pulling ${target}`);
     await git(path).pull("origin", target, { "--rebase": null });
 
-    console.log(`rebased, force pushing ${source}...`);
-    res.write(`rebased, force pushing ${source}...`);
+    console.log(`rebased, force pushing ${source}`);
+    res.write(`rebased, force pushing ${source}`);
     await git(path).push("origin", source, { "-f": null });
 
     console.log(`pushed ${source}`);
