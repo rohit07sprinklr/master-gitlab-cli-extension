@@ -27,7 +27,6 @@ Merging and rebasing PRs is just a click away.
 3. `Load unpacked`
 4. select `dist/extension`
 
-
 ### example of `config.json`
 ```json
 {
@@ -43,3 +42,5 @@ Merging and rebasing PRs is just a click away.
   ]
 }
 ```
+
+### It's highly recommended that you DO NOT use your existing local repo but instead clone afresh at a different path and use that path in your `config.json`.
