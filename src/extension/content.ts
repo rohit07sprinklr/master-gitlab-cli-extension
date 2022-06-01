@@ -132,7 +132,7 @@ function render() {
 }
 
 function insertInDOM() {
-  const referenceEl = document.querySelector(".mr-source-target");
+  const referenceEl = document.querySelector(".detail-page-description");
   const el = render();
   referenceEl.classList.add("mr-widget-workflow");
   referenceEl.parentElement.prepend(el);

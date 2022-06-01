@@ -1,27 +1,29 @@
 import { log } from "./log";
 
 function isAlreadyMerged() {
-  return !!document.querySelector(".status-box-mr-merged");
+  return !!document.querySelector(".issuable-status-badge-merged");
 }
 
 function getSourceBranch() {
-  const el = document.querySelector(".js-source-branch");
-  if (el) {
-    return el.textContent?.trim();
-  } else {
-    // log('failed getting the source branch');
-    return undefined;
-  }
+  const el = document.querySelector(".detail-page-description").getElementsByTagName('a')[1].href.toString();
+    const element = el.split('/').at(-1);
+    if (element) {
+      // return el.textContent?.trim();
+      return element;
+    } else {
+      return void 0;
+    }
 }
 
 function getTargetBranch() {
-  const el = document.querySelector(".js-target-branch");
-  if (el) {
-    return el.textContent?.trim();
-  } else {
-    // log('failed getting the target branch');
-    return undefined;
-  }
+  const el = document.querySelector(".detail-page-description").getElementsByTagName('a')[2].href.toString();
+    const element = el.split('/').at(-1);
+    if (element) {
+      // return el.textContent?.trim();
+      return element;
+    } else {
+      return void 0;
+    }
 }
 
 export { isAlreadyMerged, getSourceBranch, getTargetBranch };
