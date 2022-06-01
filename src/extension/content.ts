@@ -7,6 +7,8 @@ import {
 
 import { fetchStream, streamBody } from "./fetchStream";
 
+import { DETAIL_PAGE_DESCRIPTION } from './constants';
+
 function isReady() {
   return getSourceBranch() && getTargetBranch();
 }
@@ -132,7 +134,7 @@ function render() {
 }
 
 function insertInDOM() {
-  const referenceEl = document.querySelector(".detail-page-description");
+  const referenceEl = document.querySelector(DETAIL_PAGE_DESCRIPTION);
   const el = render();
   referenceEl.classList.add("mr-widget-workflow");
   referenceEl.parentElement.prepend(el);

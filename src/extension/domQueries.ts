@@ -1,7 +1,7 @@
-import { log } from "./log";
+import { STATUS_BADGE_MERGED } from './constants';
 
 function isAlreadyMerged() {
-  return !!document.querySelector(".issuable-status-badge-merged");
+  return !!document.querySelector(STATUS_BADGE_MERGED);
 }
 
 function getSourceBranch() {
