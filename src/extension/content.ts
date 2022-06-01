@@ -7,6 +7,9 @@ import {
 
 import { fetchStream, streamBody } from "./fetchStream";
 
+import { DETAIL_PAGE_DESCRIPTION } from './constants';
+
+
 function isReady() {
   return getSourceBranch() && getTargetBranch();
 }
@@ -47,7 +50,7 @@ function renderMergeButton(sourceBranch, targetBranch) {
           setContentInDesc(chunkString);
         }
       ).then((res) => {
-        // console.log(res);
+        console.log(res);
         button.textContent = "Merged";
         window.location.reload();
       });
@@ -132,7 +135,7 @@ function render() {
 }
 
 function insertInDOM() {
-  const referenceEl = document.querySelector(".detail-page-description");
+  const referenceEl = document.querySelector(DETAIL_PAGE_DESCRIPTION);
   const el = render();
   referenceEl.classList.add("mr-widget-workflow");
   referenceEl.parentElement.prepend(el);
