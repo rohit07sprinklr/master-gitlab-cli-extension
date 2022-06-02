@@ -107,22 +107,25 @@ app.get("/merge", async function (req, res) {
     await git(path).raw("reset", "--hard", `origin/${target}`);
 
     const result = await git(path).raw("merge","--no-commit","--no-ff", source);
-    await git(path).raw("merge", "--abort");
     const conflictStatus = (result.split('\n'))[1];
     if(conflictStatus == undefined){
       console.log('No Conflict detected!');
-      res.write('No Conflict detected');
-      await git(path).raw("merge", "--no-ff", source, "--no-edit");
+
+      res.write(`No Conflict detected: Commiting Changes`);
+      await git(path).raw("commit", "-m","Merged");
+
       console.log(`merged, pushing ${target}`);
       res.write(`merged, pushing ${target}`);
       await git(path).push("origin", target);
+
       console.log(`pushed ${target}`);
       res.write(`pushed ${target}`);
       await wait(2000);
       console.log("end merge successfully");
     }
     else if(conflictStatus.startsWith("CONFLICT")){
-      console.log('Conflict Encountered');
+      console.log('Conflict Encountered: Aborting');
+      await git(path).raw("merge", "--abort");
       throw new Error("Conflict Encountered: Merge Aborted!");
     }
     res.end();
