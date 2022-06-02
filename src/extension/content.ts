@@ -7,7 +7,8 @@ import {
 
 import { fetchStream, streamBody } from "./fetchStream";
 
-import { DETAIL_PAGE_DESCRIPTION } from './constants';
+
+import { DETAIL_PAGE_DESCRIPTION,GITLAB_CLI_DESC } from './constants';
 
 
 function isReady() {
@@ -21,13 +22,13 @@ function renderButton() {
 }
 
 function setContentInDesc(content) {
-  const el = document.getElementById("gitlab-cli-desc");
+  const el = document.getElementById(GITLAB_CLI_DESC);
   el.style.display = "block";
   el.textContent = content;
 }
 
 function clearContentInDesc() {
-  const el = document.getElementById("gitlab-cli-desc");
+  const el = document.getElementById(GITLAB_CLI_DESC);
   el.style.display = "none";
   el.textContent = "";
 }
@@ -50,7 +51,6 @@ function renderMergeButton(sourceBranch, targetBranch) {
           setContentInDesc(chunkString);
         }
       ).then((res) => {
-        console.log(res);
         button.textContent = "Merged";
         window.location.reload();
       });
@@ -80,7 +80,6 @@ function renderRebaseButton(sourceBranch, targetBranch) {
           setContentInDesc(chunkString);
         }
       ).then((res) => {
-        // console.log(res);
         button.textContent = "Rebased";
         window.location.reload();
       });
@@ -94,7 +93,7 @@ function renderRebaseButton(sourceBranch, targetBranch) {
 
 function renderDescription() {
   const descriptionAreaEl = document.createElement("p");
-  descriptionAreaEl.id = "gitlab-cli-desc";
+  descriptionAreaEl.id = GITLAB_CLI_DESC;
   descriptionAreaEl.style.display = "none";
   descriptionAreaEl.style.borderRadius = "4px";
   descriptionAreaEl.style.marginTop = "10px";
@@ -170,7 +169,7 @@ function initialise() {
     }
     if (r.status === 512) {
       insertInDOM();
-      const descEl = document.getElementById("gitlab-cli-desc");
+      const descEl = document.getElementById(GITLAB_CLI_DESC);
       setContentInDesc("CLI busy");
       disableButtons();
       streamBody(r.body, (chunkString) => {
