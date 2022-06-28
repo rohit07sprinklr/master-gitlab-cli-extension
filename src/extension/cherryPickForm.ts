@@ -243,19 +243,18 @@ function renderForm(commits, url, path, commitBranch, targetBranch) {
 
 const main = () => {
   const cherryPickForm = document.querySelector(".cherry-pick-form");
+  const currentURL = getSearchQueryParams("currentURL");
+  const currentURLInput = cherryPickForm.querySelector('input[name="location"]');
+  currentURLInput.value = currentURL;
   cherryPickForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     disableAllFormButton();
-    const currentURL = getSearchQueryParams("currentURL");
     const formData = new FormData(e.target);
     const jsonInputBody = [...formData].reduce((jsonData, [key, value]) => {
       if (key === "commitTime") value = value.replace("T", " ");
       jsonData[key] = value;
       return jsonData;
     }, {});
-
-    jsonInputBody["location"] = currentURL;
-
     const commitForm = document.querySelector(".commit-form");
     if (commitForm != null) {
       document.body.removeChild(commitForm);
@@ -276,6 +275,7 @@ const main = () => {
         throw new Error(jsonResult["ERROR"]);
       }
       enableAllFormButton();
+      currentURLInput.value = jsonResult.url;
       renderForm(
         jsonResult.commits,
         jsonResult.url,
