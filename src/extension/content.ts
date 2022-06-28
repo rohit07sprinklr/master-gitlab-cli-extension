@@ -1,30 +1,30 @@
 import { log } from "./log";
-import {
-  getSourceBranch,
-  getTargetBranch,
-  isAlreadyMerged,
-} from "./domQueries";
 
 import { fetchStream, streamBody } from "./fetchStream";
 
-function isReady() {
-  return getSourceBranch() && getTargetBranch();
-}
+import {
+  MR_WIDGET_SECTION,
+  GITLAB_CLI_DESC,
+  GITLAB_CLI_BUTTON,
+} from "./constants/domClasses";
+
+import { getMergeRequestInfo } from "./api";
+import { ajaxClient } from "./ajaxClient";
 
 function renderButton() {
   const button = document.createElement("button");
-  button.classList.add("btn", "btn-danger", "js-gitlab-cli-button");
+  button.classList.add("btn", "btn-primary", GITLAB_CLI_BUTTON);
   return button;
 }
 
 function setContentInDesc(content) {
-  const el = document.getElementById("gitlab-cli-desc");
+  const el = document.getElementById(GITLAB_CLI_DESC);
   el.style.display = "block";
   el.textContent = content;
 }
 
 function clearContentInDesc() {
-  const el = document.getElementById("gitlab-cli-desc");
+  const el = document.getElementById(GITLAB_CLI_DESC);
   el.style.display = "none";
   el.textContent = "";
 }
@@ -37,17 +37,16 @@ function renderMergeButton(sourceBranch, targetBranch) {
     disableButtons();
     try {
       await fetchStream(
-        `http://localhost:4000/merge?location=${
-          window.location
-        }&source=${encodeURIComponent(
+        `merge?location=${window.location}&source=${encodeURIComponent(
           sourceBranch!
         )}&target=${encodeURIComponent(targetBranch!)}`,
+        "GET",
+        null,
         (chunkString) => {
           button.textContent = "Merging";
           setContentInDesc(chunkString);
         }
       ).then((res) => {
-        // console.log(res);
         button.textContent = "Merged";
         window.location.reload();
       });
@@ -59,39 +58,9 @@ function renderMergeButton(sourceBranch, targetBranch) {
   return button;
 }
 
-function renderRebaseButton(sourceBranch, targetBranch) {
-  const button = renderButton();
-  button.textContent = "Rebase Via CLI";
-  button.id = "gitlab-cli-rebase";
-  button.onclick = async () => {
-    disableButtons();
-    try {
-      await fetchStream(
-        `http://localhost:4000/rebase?location=${
-          window.location
-        }&source=${encodeURIComponent(
-          sourceBranch!
-        )}&target=${encodeURIComponent(targetBranch!)}`,
-        (chunkString) => {
-          button.textContent = "Rebasing";
-          setContentInDesc(chunkString);
-        }
-      ).then((res) => {
-        // console.log(res);
-        button.textContent = "Rebased";
-        window.location.reload();
-      });
-    } catch (e) {
-      enableButtons();
-      button.textContent = "Retry Rebase";
-    }
-  };
-  return button;
-}
-
 function renderDescription() {
   const descriptionAreaEl = document.createElement("p");
-  descriptionAreaEl.id = "gitlab-cli-desc";
+  descriptionAreaEl.id = GITLAB_CLI_DESC;
   descriptionAreaEl.style.display = "none";
   descriptionAreaEl.style.borderRadius = "4px";
   descriptionAreaEl.style.marginTop = "10px";
@@ -100,29 +69,26 @@ function renderDescription() {
   descriptionAreaEl.style.border = "1px solid #e5e5e5";
   descriptionAreaEl.style.backgroundColor = "#fafafa";
   descriptionAreaEl.style.padding = "12px";
-
   return descriptionAreaEl;
 }
 
-function render() {
+function render(sourceBranch, targetBranch) {
   const rootDiv = document.createElement("div");
+  rootDiv.style.display = "flex";
+  rootDiv.style.flexDirection = "column";
+  rootDiv.style.marginLeft = "auto";
+  rootDiv.style.marginRight = "auto";
+  rootDiv.style.marginTop = "16px";
   rootDiv.classList.add("mr-widget-heading", "append-bottom-default");
+  rootDiv.style.border = "1px solid #e5e5e5";
 
   const containerDiv = document.createElement("div");
   containerDiv.classList.add("mr-widget-content");
 
   const buttonGroup = document.createElement("div");
-  buttonGroup.classList.add("d-flex");
-
-  const sourceBranch = getSourceBranch();
-  const targetBranch = getTargetBranch();
-
   const mergeButton = renderMergeButton(sourceBranch, targetBranch);
-  const rebaseButton = renderRebaseButton(sourceBranch, targetBranch);
-  rebaseButton.style.marginLeft = "10px";
-
   buttonGroup.appendChild(mergeButton);
-  buttonGroup.appendChild(rebaseButton);
+  buttonGroup.classList.add("d-flex");
 
   containerDiv.appendChild(buttonGroup);
   containerDiv.appendChild(renderDescription());
@@ -131,15 +97,8 @@ function render() {
   return rootDiv;
 }
 
-function insertInDOM() {
-  const referenceEl = document.querySelector(".mr-source-target");
-  const el = render();
-  referenceEl.classList.add("mr-widget-workflow");
-  referenceEl.parentElement.prepend(el);
-}
-
 function getButtons() {
-  return document.querySelectorAll(".js-gitlab-cli-button");
+  return document.querySelectorAll("." + GITLAB_CLI_BUTTON);
 }
 
 function disableButtons() {
@@ -153,51 +112,107 @@ function enableButtons() {
     el.disabled = false;
   });
 }
-
-function initialise() {
-  return fetch(
-    `http://localhost:4000/handshake?location=${window.location}`
-  ).then((r) => {
-    if (r.status === 200) {
-      insertInDOM();
-      return true;
-    }
-    if (r.status === 500) {
-      return false;
-    }
-    if (r.status === 512) {
-      insertInDOM();
-      const descEl = document.getElementById("gitlab-cli-desc");
-      setContentInDesc("CLI busy");
-      disableButtons();
-      streamBody(r.body, (chunkString) => {
-        descEl.textContent = chunkString;
-      }).then(() => {
-        clearContentInDesc();
-        enableButtons();
-      });
-      return false;
-    }
-
-    return false;
-  });
+function wait(millis) {
+  return new Promise((res) => setTimeout(res, millis));
 }
 
+async function initialise(
+  repoURLName,
+  mergeRequestID,
+  sourceBranch,
+  targetBranch,
+  isRebaseInProgress
+) {
+  const referenceEl = document.querySelector('.mr-state-widget');
+  const el = render(sourceBranch, targetBranch);
+  referenceEl.classList.add("mr-widget-workflow");
+  referenceEl.append(el);  
+  disableButtons();
+  try {
+    await ajaxClient
+      .GET({
+        path: `handshake?location=${window.location}`,
+        requestType: "CLIRequest",
+      })
+      .then(async (r) => {
+        if (r.status === 200) {
+          const mergeButton = document.getElementById("gitlab-cli-merge");
+          enableButtons();
+          return true;
+        }
+        if (r.status === 400) {
+          setContentInDesc(`URL not Found`);
+        }
+        return false;
+      });
+  } catch (e) {
+    console.log(e);
+    setContentInDesc(`Server not Initialised`);
+  }
+}
+
+function getProjectInfo(pathName) {
+  let pathArray = pathName.split("/");
+  const midIndex = pathArray.findIndex((element) => {
+    return element == "merge_requests";
+  });
+  const repoURLIndex = pathArray.slice(1, midIndex - 1);
+  const repoURLName = repoURLIndex.join("/");
+  return { mergeRequestID: pathArray.at(midIndex + 1), repoURLName };
+}
+async function renderWidget(projectInfo) {
+  let retryCounter = 1;
+  while (retryCounter <= 2) {
+    try {
+      let res = await getMergeRequestInfo(
+        projectInfo.repoURLName,
+        projectInfo.mergeRequestID
+      );
+      if (!res.isMerged) {
+        initialise(
+          projectInfo.repoURLName,
+          projectInfo.mergeRequestID,
+          res.sourceBranch,
+          res.targetBranch,
+          res.isRebaseInProgress
+        );
+        return;
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    await wait(2000);
+    retryCounter += 1;
+  }
+}
 const main = () => {
   log("init");
-  const interval = setInterval(async () => {
-    if (isReady()) {
-      clearInterval(interval);
-      if (!isAlreadyMerged()) {
-        initialise();
+  const pathName = window.location.pathname;
+  const projectInfo = getProjectInfo(pathName);
+  const sectionContainer = document.querySelector(".mr-section-container");
+  if (sectionContainer != null) {
+    renderWidget(projectInfo);
+    return;
+  }
+  const targetNode = document.querySelector(".issuable-discussion");
+  if(!targetNode){
+    return;
+  }
+  const config = { childList: true, subtree: true };
+
+  const callback = function (mutationList, observer) {
+    for (const mutation of mutationList) {
+      if (mutation.target.classList.contains("mr-section-container")) {
+        log("Widget section loaded");
+        observer.disconnect();
+        renderWidget(projectInfo);
+        break;
       }
     }
-  }, 1000);
+  };
 
-  /**
-   * Fired when a message is sent from either an extension process or a content script.
-   */
-  // chrome.runtime.onMessage.addListener(handleMessagesFromPopup);
+  const observer = new MutationObserver(callback);
+  observer.observe(targetNode, config);
 };
 
 main();

@@ -2,74 +2,78 @@
 
 const express = require("express");
 const git = require("simple-git");
-const fs = require("fs");
-let config;
+const bodyParser = require("body-parser");
+const cors = require("cors");
 
-try {
-  config = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
-} catch (e) {
-  console.error("missing config.json");
-  process.exit(1);
-}
+import PQueue from "p-queue";
+import { getLocalRepository } from "./utils";
+import { mergeProcess } from "./merge";
+import { getMergeCommits } from "./getMergeCommits";
+import { cherryPickProcess } from "./cherryPick";
+import {
+  getProfiles,
+  addProfile,
+  deleteProfile,
+  updateProfile,
+} from "./profiles";
+
+const queue = new PQueue({ concurrency: 1 });
 
 const PORT = 4000;
 const app = express();
-
-app.listen(PORT, () => {
-  console.log("Gitlab CLI listening at 4000...");
-});
-
-function wait(millis) {
-  return new Promise((res) => setTimeout(res, millis));
-}
-
-let cliStatus = "IDLE"; // 'IN_PROGRESS'
-
-let subscriptions = [];
-
-function markWIP() {
-  cliStatus = "IN_PROGRESS";
-}
-
-function markIdle() {
-  cliStatus = "IDLE";
-  subscriptions.forEach((i) => i());
-  subscriptions = [];
-}
-
-function finishExisting() {
-  return new Promise((res) => {
-    subscriptions.push(res);
-  });
-}
+app.use(bodyParser.json());
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
+app.use(cors());
 
 app.get("/handshake", async function (req, res) {
   const { location } = req.query;
-  if (config.repos.some((repo) => location.startsWith(repo.url))) {
-    if (cliStatus === "IDLE") {
-      res
-        .writeHead(200, {
-          "access-control-allow-origin": "*",
-        })
-        .end();
-      return;
-    }
-    res.writeHead(512, {
-      "Content-Type": "text/plain",
-      "Transfer-Encoding": "chunked",
-      "access-control-allow-origin": "*",
-    });
-    res.write("CLI busy");
-    await finishExisting();
-    res.write("CLI free");
+  try {
+    await getLocalRepository(location);
+    res.status(200).end();
     res.end();
-    return;
+  } catch (e) {
+    res.status(400).end();
   }
-  res
-    .writeHead(500, {
-      "access-control-allow-origin": "*",
-    })
-    .end();
+});
+
+app.get("/profiles", async function (req, res) {
+  try {
+    const profileResponse = await getProfiles();
+    res.status(200).send(profileResponse);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+app.post("/profiles", async function (req, res) {
+  try {
+    const profileResponse = await addProfile(req.body);
+    res.status(200).send(profileResponse);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+app.delete("/profiles", async function (req, res) {
+  try {
+    const profileResponse = await deleteProfile(req.body.id);
+    res.status(200).send(profileResponse);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+app.put("/profiles", async function (req, res) {
+  try {
+    const profileResponse = await updateProfile(
+      req.body.id,
+      req.body.profileData
+    );
+    res.status(200).send(profileResponse);
+  } catch (e) {
+    res.status(400).send(e);
+  }
 });
 
 app.get("/merge", async function (req, res) {
@@ -78,105 +82,47 @@ app.get("/merge", async function (req, res) {
     "Transfer-Encoding": "chunked",
     "access-control-allow-origin": "*",
   });
-  if (cliStatus !== "IDLE") {
-    res.write(`CLI Busy`);
-    await wait(100);
-    res.write(`ERROR`);
-    res.end();
-    return;
-  }
-  markWIP();
   try {
     const { source, target, location } = req.query;
-    const path = config.repos.find((repo) =>
-      location.startsWith(repo.url)
-    ).path;
-    console.log("start merge");
-    console.log(`fetching ${source}`);
-    res.write(`fetching ${source}`);
-    await git(path).fetch("origin", source);
-
-    console.log(`fetching ${target}`);
-    res.write(`fetching ${target}`);
-    await git(path).fetch("origin", target);
-
-    await git(path).checkout(source);
-    await git(path).raw("reset", "--hard", `origin/${source}`);
-
-    await git(path).checkout(target);
-    await git(path).raw("reset", "--hard", `origin/${target}`);
-
-    await git(path).raw("merge", "--no-ff", source, "--no-edit");
-
-    console.log(`merged, pushing ${target}`);
-    res.write(`merged, pushing ${target}`);
-    await git(path).push("origin", target);
-
-    console.log(`pushed ${target}`);
-    res.write(`pushed ${target}`);
-    await wait(2000);
-    console.log("end merge successfully");
-    res.end();
+    const localRepo = await getLocalRepository(location);
+    res.write(`Merge Queued `);
+    queue.add(
+      async () => await mergeProcess(res, source, target, localRepo.path)
+    );
   } catch (e) {
-    res.write(`error: ${e.toString()}`);
-    await wait(100);
-    res.write(`ERROR`);
-    console.error(e);
-    console.log("end merge failure");
-    res.end();
+    res.write(e.toString());
   }
-  markIdle();
 });
 
-app.get("/rebase", async function (req, res) {
+app.post("/cherrypick", async function (req, res) {
   res.writeHead(200, {
     "Content-Type": "text/plain",
     "Transfer-Encoding": "chunked",
     "access-control-allow-origin": "*",
   });
-  if (cliStatus !== "IDLE") {
-    res.write(`CLI Busy`);
-    await wait(100);
-    res.write(`ERROR`);
-    res.end();
-    return;
-  }
-  markWIP();
+  res.write(`Cherry-Pick Queued `);
+  queue.add(async () => await cherryPickProcess(req, res));
+});
 
+app.post("/mergecommits", async function (req, res) {
   try {
-    const { source, target, location } = req.query;
-    const path = config.repos.find((repo) =>
-      location.startsWith(repo.url)
-    ).path;
-
-    console.log("start rebase");
-    console.log(`fetching ${source}`);
-    res.write(`fetching ${source}`);
-    await git(path).fetch("origin", source);
-
-    await git(path).checkout(source);
-    await git(path).raw("reset", "--hard", `origin/${source}`);
-
-    console.log(`pulling ${target}`);
-    res.write(`pulling ${target}`);
-    await git(path).pull("origin", target, { "--rebase": null });
-
-    console.log(`rebased, force pushing ${source}`);
-    res.write(`rebased, force pushing ${source}`);
-    await git(path).push("origin", source, { "-f": null });
-
-    console.log(`pushed ${source}`);
-    res.write(`pushed ${source}`);
-    await wait(2000);
-    console.log("end rebase successfully");
-    res.end();
+    const { commitAuthor, commitTime, location } = req.body;
+    const localRepo = await getLocalRepository(location);
+    const jsonResponse = await getMergeCommits(
+      commitAuthor,
+      commitTime,
+      localRepo
+    );
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "access-control-allow-origin": "*",
+    });
+    res.end(JSON.stringify(jsonResponse));
   } catch (e) {
-    res.write(`error: ${e.toString()}`);
-    await wait(100);
-    res.write(`ERROR`);
-    console.error(e);
-    console.log("end rebase failure");
-    res.end();
+    res.status(400).end(e.toString());
   }
-  markIdle();
+});
+
+app.listen(PORT, () => {
+  console.log("Gitlab CLI listening at 4000...");
 });
