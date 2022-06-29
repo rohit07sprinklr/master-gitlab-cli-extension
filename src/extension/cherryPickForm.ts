@@ -40,7 +40,8 @@ function onCherryPickPause(jsonFormdata, commitsCompleted) {
 }
 
 function onCherryPickComplete(commitBranch, targetBranch, url) {
-  const submitCherryPickRequestButton = document.querySelector(".btn-cherry-pick");
+  const submitCherryPickRequestButton =
+    document.querySelector(".btn-cherry-pick");
   const buttonGroup = document.querySelector(".button-group");
   buttonGroup.removeChild(submitCherryPickRequestButton);
   const completeButton = document.createElement("button");
@@ -168,20 +169,37 @@ function disableCherryPickCheckbox() {
     checkbox.setAttribute("disabled", "true");
   });
 }
-function addFormBody(commit) {
+function addFormBody(commit, mergeRequestPageURL) {
   return `
-<td><input type="checkbox" checked=true style="height:20px;" class="commitCheckbox"></td>
-<td><input type="text" class="form-control commitsha" value="${commit.commitSHA}" readonly=true></td>
-<td><input type="text" class="form-control commitdate" value="${commit.commitDate}" readonly=true></td>
-<td><input type="text" class="form-control commitmessage" value="${commit.commitMessage}" readonly=true></td>
-`;
+<td style="vertical-align: middle;"><input type="checkbox" checked=true style="height:20px;" class="commitCheckbox"></td>
+<td><input type="text" class="form-control commitsha" value="${
+    commit.commitSHA
+  }" readonly=true></td>
+<td><input type="text" class="form-control commitdate" value="${
+    commit.commitDate
+  }" readonly=true></td>
+<td><input type="text" class="form-control commitmessage" value="${
+    commit.commitMessage
+  }" readonly=true></td>
+<td style="vertical-align: middle;">${
+    mergeRequestPageURL
+      ? `<a href=${mergeRequestPageURL} target='_blank' rel='noopener noreferrer' class='commitMRLink'>Link</a>`
+      : "<p>No Link Found</p>"
+  }</td>`;
 }
 function addFormHeader() {
   return `
   <th scope="col" style="width:5%">Checkbox</th>
   <th scope="col" style="width:10%">Commit_SHA</th>
   <th scope="col">Commit Date</th>
-  <th scope="col">Commit Message</th>`;
+  <th scope="col">Commit Message</th>
+  <th scope="col" style="width:10%">PR Link</th>`;
+}
+function getMergeRequestPageURL(url, commitMergeRequestNumber) {
+  if (!commitMergeRequestNumber) {
+    return undefined;
+  }
+  return `${url}/-/merge_requests/${commitMergeRequestNumber}`;
 }
 function renderForm(commits, url, path, commitBranch, targetBranch) {
   setHTMLContentInDesc(`${commits.length} Merge Commits Found!`);
@@ -213,7 +231,11 @@ function renderForm(commits, url, path, commitBranch, targetBranch) {
     const tableRow = document.createElement("tr");
     tableRow.style.height = "5%";
     tableBody.append(tableRow);
-    tableRow.innerHTML = addFormBody(commit);
+    const mergeRequestPageURL = getMergeRequestPageURL(
+      url,
+      commit.commitMergeRequestNumber
+    );
+    tableRow.innerHTML = addFormBody(commit, mergeRequestPageURL);
   });
   const buttonGroup = document.createElement("div");
   buttonGroup.style.marginTop = "20px";
@@ -240,12 +262,48 @@ function renderForm(commits, url, path, commitBranch, targetBranch) {
   });
   document.body.appendChild(form);
 }
-
+async function getDropdownURL(currentURLInput, currentURL) {
+  try {
+    const res = await ajaxClient.GET({
+      path: "profiles",
+      requestType: "CLIRequest",
+    });
+    if (res.status === 400) {
+      throw new Error();
+    }
+    const profiles = await res.json();
+    const urlList = document.getElementById("url-list");
+    if (!profiles.repos.length) {
+      throw new Error();
+    }
+    currentURLInput.value = ``;
+    currentURLInput.setAttribute(
+      "placeholder",
+      "select repo url present in config file"
+    );
+    profiles.repos.forEach((profile) => {
+      const option = document.createElement("option");
+      option.value = profile.url;
+      urlList.appendChild(option);
+      if (currentURL.startsWith(profile.url)) {
+        currentURLInput.value = profile.url;
+      }
+    });
+  } catch (e) {
+    setHTMLContentInDesc(
+      `Please create a config file / add some repo url to config`
+    );
+    currentURLInput.value = ``;
+  }
+}
 const main = () => {
   const cherryPickForm = document.querySelector(".cherry-pick-form");
   const currentURL = getSearchQueryParams("currentURL");
-  const currentURLInput = cherryPickForm.querySelector('input[name="location"]');
-  currentURLInput.value = currentURL;
+  const currentURLInput = cherryPickForm.querySelector(
+    'input[name="location"]'
+  );
+  currentURLInput.value = `Loading...`;
+  getDropdownURL(currentURLInput, currentURL);
   cherryPickForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     disableAllFormButton();
@@ -275,7 +333,9 @@ const main = () => {
         throw new Error(jsonResult["ERROR"]);
       }
       enableAllFormButton();
-      currentURLInput.value = jsonResult.url;
+      if (jsonResult.url) {
+        currentURLInput.value = jsonResult.url;
+      }
       renderForm(
         jsonResult.commits,
         jsonResult.url,
