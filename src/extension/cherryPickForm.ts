@@ -219,6 +219,9 @@ function renderForm(commits, url, path, commitBranch, targetBranch) {
   tableDiv.appendChild(table);
 
   const tableHead = document.createElement("thead");
+  tableHead.style.position = "sticky";
+  tableHead.style.top = "0";
+  tableHead.style.background = "#FFFFFF";
   table.appendChild(tableHead);
 
   const formHeader = document.createElement("tr");
