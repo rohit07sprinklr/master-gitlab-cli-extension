@@ -70,8 +70,9 @@ function onCherryPickComplete(commitBranch, targetBranch, url) {
           )}`
         );
       } else {
+        const mergeRequestPageLink = `${url}/-/merge_requests/${projectInfo[0].iid}`;
         setHTMLContentInDesc(
-          `<strong>There already exist a OPEN Merge Request from ${commitBranch} to ${targetBranch}. Check Merge Request ${projectInfo[0].iid}</strong>`
+          `<strong>There already exists a OPEN MR from ${commitBranch} to ${targetBranch}. Check out <a href =${mergeRequestPageLink} target='_blank' rel='noopener noreferrer'>${mergeRequestPageLink}</a></strong>`
         );
       }
     } catch (e) {
