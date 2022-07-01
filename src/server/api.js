@@ -106,11 +106,13 @@ app.post("/cherrypick", async function (req, res) {
 
 app.post("/mergecommits", async function (req, res) {
   try {
-    const { commitAuthor, commitTime, location } = req.body;
+    const { commitAuthor, commitTime, fetchMergeCommitBranch, location } =
+      req.body;
     const localRepo = await getLocalRepository(location);
     const jsonResponse = await getMergeCommits(
       commitAuthor,
       commitTime,
+      fetchMergeCommitBranch,
       localRepo
     );
     res.writeHead(200, {

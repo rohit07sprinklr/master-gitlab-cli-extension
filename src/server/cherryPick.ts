@@ -14,11 +14,19 @@ async function cherryPickProcess(req, res) {
         await git(localPath).checkout(commitBranch);
         await git(localPath).raw("reset", "--hard", `origin/${commitBranch}`);
       } catch {
-        try{
-          await git(localPath).checkout(commitBranch);
-        }
-        catch{
+        try {
+          await git(localPath).deleteLocalBranch(commitBranch, true);
           await git(localPath).checkoutBranch(commitBranch, targetBranch);
+          res.write(
+            `Deleted existing branch ${commitBranch} and created new branch ${commitBranch}`
+          );
+          console.log(
+            `Deleted existing branch ${commitBranch} and created new branch ${commitBranch}`
+          );
+        } catch {
+          await git(localPath).checkoutBranch(commitBranch, targetBranch);
+          res.write(`Created new branch ${commitBranch}`);
+          console.log(`Created new branch ${commitBranch}`);
         }
       }
     } else if (requestType === "continue") {
