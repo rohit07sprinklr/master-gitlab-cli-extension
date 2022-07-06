@@ -4,3 +4,5 @@ node_modules/
 Icon?
 .DS_Store
 package-lock.json
+out/
+yarn.lock

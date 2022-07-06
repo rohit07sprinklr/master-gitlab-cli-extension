@@ -1,5 +1,7 @@
 const git = require("simple-git");
 
+import { log } from "../logger.js";
+
 async function getMergeCommits(
   commitAuthor,
   commitTime,
@@ -10,7 +12,7 @@ async function getMergeCommits(
     const path = localRepo.path;
     const url = localRepo.url;
     const pathName = new URL(url).pathname.slice(1);
-    console.log(`Fetching Merge Commits`);
+    log(`Fetching Merge Commits`);
     const options = [
       "log",
       "--date=local",
@@ -41,7 +43,7 @@ async function getMergeCommits(
       return jsonResponse;
     }
     const result = resp.split("--endcommit\n");
-    console.log(`${result.length} commits found`);
+    log(`${result.length} commits found`);
     const commitlogs = result.reverse();
     jsonResponse["path"] = path;
     jsonResponse["url"] = url;

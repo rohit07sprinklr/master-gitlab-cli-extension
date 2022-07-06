@@ -1,16 +1,28 @@
-# Gitlab CLI Extension
+# Gitlab CLI 
 Merge PR's and Cherry-pick mutliple merge commits using CLI in one click from your browser.
 
-## Setting up the extension - server
-1. `yarn build`
-2. `cd dist/server`
-3. `yarn start`
+## Gitlab-cli-extension
 
-## Setting up the extension - client
+### To build extension
+1. `cd extension`
+2. `npm install`
+3. `yarn build`
+
+### Setting up the extension - client
 1. go to `chrome://extensions`
 2. turn on the `developer mode` toggle
 3. `Load unpacked`
 4. select `dist/extension`
+
+## Gitlab-cli-app
+Build mac OS app with packaged gitlab cli server files
+
+### To build a new app
+1. `cd server-app`
+2. `npm install`
+3. `npm run make`
+
+#### Location of packaged app: `out/<app-name>-darwin-x64`
 
 ### Adding Profiles
 - Visit gitlab.com
