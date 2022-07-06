@@ -7,7 +7,7 @@ export function wait(millis) {
 
 export async function readConfigFile() {
   try {
-    const configPath = path.join(__dirname, '../server/resources/config.json');
+    const configPath = path.join(__dirname, '../resources/config.json');
     const configData = await fs.readFile(configPath);
     return JSON.parse(configData);
   } catch (e) {
@@ -17,7 +17,7 @@ export async function readConfigFile() {
 
 export async function writeConfigFile(configJSONData) {
   try {
-    const configPath = path.join(__dirname, '../server/resources/config.json');
+    const configPath = path.join(__dirname, '../resources/config.json');
     await fs.writeFile(configPath, JSON.stringify(configJSONData));
   } catch (e) {
     throw new Error(e.toString());
@@ -54,5 +54,5 @@ export function renderPauseMessage(currentCommitSHA, e) {
 }
 
 export function getLogFilePath() {
-    return path.join(__dirname, '../server/resources/console.txt');
+    return path.join(__dirname, '../resources/console.txt');
 }

@@ -1,0 +1,64 @@
+Handshake successful !!<br>Merge Queued<br>start merge<br>fetching dummy<br>fetching feature1<br>Error: CONFLICTS: file1.txt:content<br>End merge failure<br>Handshake successful !!<br>Fetching Merge Commits<br>Error: warning: redirecting to https://gitlab.com/rohit07sprinklr/Trial.git/
+fatal: Couldn't find remote ref main
+<br>Fetching Merge Commits<br>10 commits found<br>Cherry-Pick Queued<br>Deleted existing branch fixbugs-feature and created new branch fixbugs-feature<br>Failed<br>Error: On branch fixbugs-feature
+You are currently cherry-picking commit 5177e66.
+
+nothing to commit, working tree clean
+The previous cherry-pick is now empty, possibly due to conflict resolution.
+If you wish to commit it anyway, use:
+
+    git commit --allow-empty
+
+Otherwise, please use 'git reset'
+<br>Cherry-Pick Queued<br>Cherry-pick daf1b5c Successful<br>[fixbugs-feature 3e64293] Merge branch 'feature/popup-page' into development
+ Date: Thu Jun 30 20:20:31 2022 +0530
+ 4 files changed, 7 insertions(+)
+ create mode 100644 configPopup.json
+ create mode 100644 popup. css
+ create mode 100644 popup.html
+ create mode 100644 popup.js
+<br>Cherry-pick 3a740f9 Successful<br>[fixbugs-feature 4ddd55f] Merge branch 'feature/calender' into 'feature/popup-page'
+ Author: rohit07sprinklr <rohit.kumar@sprinklr.com>
+ Date: Fri Jul 1 04:19:37 2022 +0000
+ 3 files changed, 9 insertions(+)
+ create mode 100644 calender.html
+ create mode 100644 calender.json
+ create mode 100644 configDev.json
+<br>Cherry-pick 4214571 Successful<br>[fixbugs-feature c926f87] Merge branch 'feature/clock' into 'feature/popup-page'
+ Author: rohit07sprinklr <rohit.kumar@sprinklr.com>
+ Date: Fri Jul 1 04:28:58 2022 +0000
+ 1 file changed, 3 insertions(+)
+ create mode 100644 clock.js
+<br>Cherry-pick 09c926f Successful<br>[fixbugs-feature d4c69ed] Merge branch 'feature/modal' into 'development'
+ Author: rohit07sprinklr <rohit.kumar@sprinklr.com>
+ Date: Fri Jul 1 04:45:04 2022 +0000
+ 3 files changed, 9 insertions(+)
+ create mode 100644 modal.css
+ create mode 100644 modal.html
+ create mode 100644 modal.js
+<br>Failed<br>Error: On branch fixbugs-feature
+You are currently cherry-picking commit ae215cc.
+
+nothing to commit, working tree clean
+The previous cherry-pick is now empty, possibly due to conflict resolution.
+If you wish to commit it anyway, use:
+
+    git commit --allow-empty
+
+Otherwise, please use 'git reset'
+<br>Cherry-Pick Queued<br>Cherry-pick 05944b2 Successful<br>[fixbugs-feature 4ee36e4] Merge branch 'feature/userModel' into 'feature/form-page'
+ Author: rohit07sprinklr <rohit.kumar@sprinklr.com>
+ Date: Fri Jul 1 05:19:58 2022 +0000
+ 1 file changed, 1 insertion(+)
+ create mode 100644 user.js
+<br>Failed<br>Error: On branch fixbugs-feature
+You are currently cherry-picking commit 8f73690.
+
+nothing to commit, working tree clean
+The previous cherry-pick is now empty, possibly due to conflict resolution.
+If you wish to commit it anyway, use:
+
+    git commit --allow-empty
+
+Otherwise, please use 'git reset'
+<br>Handshake successful !!<br>

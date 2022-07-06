@@ -18,7 +18,7 @@ Merge PR's and Cherry-pick mutliple merge commits using CLI in one click from yo
 Build mac OS app with packaged gitlab cli server files
 
 ### To build a new app
-1. `cd server-app`
+1. `cd server`
 2. `npm install`
 3. `npm run make`
 

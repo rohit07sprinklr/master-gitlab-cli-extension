@@ -3,7 +3,7 @@ const path = require("path");
 const END_OF_CONTENT = "<br>";
 
 export function getLogFilePath() {
-  return path.join(__dirname, "../server/resources/console.txt");
+  return path.join(__dirname, "../resources/console.txt");
 }
 
 const log = async (content) => {

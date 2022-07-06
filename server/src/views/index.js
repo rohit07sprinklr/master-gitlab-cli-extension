@@ -10,7 +10,7 @@ const ts = require('tail-stream');
     consoleBox.scrollTop = consoleBox.scrollHeight;
   };
   const streamLogFile = () => {
-    const FILE_PATH = path.join(__dirname, "../server/resources/console.txt");
+    const FILE_PATH = path.join(__dirname, "../resources/console.txt");
     try{
       const tstream = ts.createReadStream(FILE_PATH, {
         beginAt: 0
