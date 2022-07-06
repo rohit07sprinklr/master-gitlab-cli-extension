@@ -1,5 +1,11 @@
 import { ajaxClient } from "./ajaxClient";
 
+function disableAllFormButton() {
+  const buttons = document.querySelectorAll("button");
+  buttons.forEach((button) => {
+    button.setAttribute("disabled", "true");
+  });
+}
 function setContentInDesc(content) {
   const el = document.getElementById("options-desc");
   if (content.toString().trim() === "") {
@@ -183,7 +189,19 @@ function AddProfile() {
     }
   });
 }
-const main = () => {
+const main = async () => {
+  try {
+    await ajaxClient
+      .GET({
+        path: `handshake`,
+        requestType: "CLIRequest",
+      })
+  } catch (e) {
+    console.log(e);
+    setContentInDesc(`Server not Initialised`);
+    disableAllFormButton();
+    return false;
+  }
   getProfile();
   AddProfile();
 };

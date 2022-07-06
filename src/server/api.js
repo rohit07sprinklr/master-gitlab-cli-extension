@@ -30,9 +30,8 @@ app.use(
 app.use(cors());
 
 app.get("/handshake", async function (req, res) {
-  const { location } = req.query;
   try {
-    await getLocalRepository(location);
+    console.log("Handshake successful !!");
     res.status(200).end();
     res.end();
   } catch (e) {

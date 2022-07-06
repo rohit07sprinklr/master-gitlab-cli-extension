@@ -70,8 +70,9 @@ function onCherryPickComplete(commitBranch, targetBranch, url) {
           )}`
         );
       } else {
+        const mergeRequestPageLink = `${url}/-/merge_requests/${projectInfo[0].iid}`;
         setHTMLContentInDesc(
-          `<strong>There already exist a OPEN Merge Request from ${commitBranch} to ${targetBranch}. Check Merge Request ${projectInfo[0].iid}</strong>`
+          `<strong>There already exists a OPEN MR from ${commitBranch} to ${targetBranch}. Check out <a href =${mergeRequestPageLink} target='_blank' rel='noopener noreferrer'>${mergeRequestPageLink}</a></strong>`
         );
       }
     } catch (e) {
@@ -280,10 +281,6 @@ async function getDropdownURL(currentURLInput, currentURL) {
       throw new Error();
     }
     currentURLInput.value = ``;
-    currentURLInput.setAttribute(
-      "placeholder",
-      "select repo url present in config file"
-    );
     profiles.repos.forEach((profile) => {
       const option = document.createElement("option");
       option.value = profile.url;
@@ -299,7 +296,19 @@ async function getDropdownURL(currentURLInput, currentURL) {
     currentURLInput.value = ``;
   }
 }
-const main = () => {
+const main = async () => {
+  try {
+    await ajaxClient
+      .GET({
+        path: `handshake`,
+        requestType: "CLIRequest",
+      })
+  } catch (e) {
+    console.log(e);
+    setHTMLContentInDesc(`Server not Initialised`);
+    disableAllFormButton();
+    return false;
+  }
   const cherryPickForm = document.querySelector(".cherry-pick-form");
   const currentURL = getSearchQueryParams("currentURL");
   const currentURLInput = cherryPickForm.querySelector(
