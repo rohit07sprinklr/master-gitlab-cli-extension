@@ -281,10 +281,6 @@ async function getDropdownURL(currentURLInput, currentURL) {
       throw new Error();
     }
     currentURLInput.value = ``;
-    currentURLInput.setAttribute(
-      "placeholder",
-      "select repo url present in config file"
-    );
     profiles.repos.forEach((profile) => {
       const option = document.createElement("option");
       option.value = profile.url;
@@ -300,7 +296,19 @@ async function getDropdownURL(currentURLInput, currentURL) {
     currentURLInput.value = ``;
   }
 }
-const main = () => {
+const main = async () => {
+  try {
+    await ajaxClient
+      .GET({
+        path: `handshake`,
+        requestType: "CLIRequest",
+      })
+  } catch (e) {
+    console.log(e);
+    setHTMLContentInDesc(`Server not Initialised`);
+    disableAllFormButton();
+    return false;
+  }
   const cherryPickForm = document.querySelector(".cherry-pick-form");
   const currentURL = getSearchQueryParams("currentURL");
   const currentURLInput = cherryPickForm.querySelector(

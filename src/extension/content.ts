@@ -131,7 +131,7 @@ async function initialise(
   try {
     await ajaxClient
       .GET({
-        path: `handshake?location=${window.location}`,
+        path: `handshake`,
         requestType: "CLIRequest",
       })
       .then(async (r) => {
@@ -139,9 +139,6 @@ async function initialise(
           const mergeButton = document.getElementById("gitlab-cli-merge");
           enableButtons();
           return true;
-        }
-        if (r.status === 400) {
-          setContentInDesc(`URL not Found`);
         }
         return false;
       });

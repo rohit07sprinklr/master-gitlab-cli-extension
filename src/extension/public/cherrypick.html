@@ -17,7 +17,7 @@
     <form class="cherry-pick-form">
       <div class="form-group row">
         <div class="form-group col-md-6">
-          <label for="location">Repository URL:</label>
+          <label for="location" class="required">Repository URL:</label>
           <input
             type="text"
             class="form-control"
@@ -25,6 +25,8 @@
             id="location"
             name="location"
             list="url-list"
+            placeholder="select repo url present in config file"
+            required
           />
           <datalist id="url-list"></datalist>
         </div>
@@ -41,46 +43,48 @@
       </div>
       <div class="form-group row">
         <div class="form-group col-md-6">
-          <label for="commitBranch">Source Branch</label>
+          <label for="commitBranch" class="required">Source Branch</label>
           <input
             type="text"
             class="form-control"
             id="commitBranch"
             name="commitBranch"
             placeholder="new branch or existing branch in origin"
+            required
           />
         </div>
         <div class="form-group col-md-6">
-          <label for="targetBranch">Target Branch</label>
+          <label for="targetBranch" class="required">Target Branch</label>
           <input
             type="text"
             class="form-control"
             id="targetBranch"
             name="targetBranch"
             placeholder="target branch"
-            ;
+            required
           />
         </div>
       </div>
       <div class="form-group row">
         <div class="form-group col-md-6">
-          <label for="commitAuthor">Author</label>
+          <label for="commitAuthor" class="required">Author</label>
           <input
             type="text"
             class="form-control"
             id="commitAuthor"
             name="commitAuthor"
             placeholder="email id of author for whom to fetch merge commits for"
-            ;
+            required
           />
         </div>
         <div class="form-group col-md-6">
-          <label for="commitTime">Time since commit:</label>
+          <label for="commitTime" class="required">Time since commit:</label>
           <input
             type="datetime-local"
             class="form-control"
             id="commitTime"
             name="commitTime"
+            required
           />
         </div>
       </div>

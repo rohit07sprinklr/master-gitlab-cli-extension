@@ -58,3 +58,8 @@ h2 {
   margin-top: 8px;
   margin-bottom: 8px;
 }
+.required:after {
+  color: #e32;
+  content: ' *';
+  display:inline;
+}
