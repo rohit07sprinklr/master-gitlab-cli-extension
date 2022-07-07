@@ -313,10 +313,10 @@ function addCommitAuthor(authorListDiv, commitAuthors, currentAuthor) {
   const newAuthorTag = document.createElement("div");
   newAuthorTag.classList.add("author-tag");
   newAuthorTag.setAttribute("id", commitAuthors.length);
-  const authorTagContenr = document.createElement("div");
-  authorTagContenr.classList.add("author-tag-content");
-  authorTagContenr.innerHTML = currentAuthor;
-  newAuthorTag.appendChild(authorTagContenr);
+  const authorTagContent = document.createElement("div");
+  authorTagContent.classList.add("author-tag-content");
+  authorTagContent.innerHTML = currentAuthor;
+  newAuthorTag.appendChild(authorTagContent);
   const authorTagDelete = document.createElement("button");
   authorTagDelete.setAttribute("type", "button");
   authorTagDelete.classList.add("author-tag-delete");
