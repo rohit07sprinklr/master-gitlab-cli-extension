@@ -176,6 +176,9 @@ function addFormBody(commit, mergeRequestPageURL) {
 <td><input type="text" class="form-control commitsha" value="${
     commit.commitSHA
   }" readonly=true></td>
+  <td><input type="text" class="form-control commitsha" value="${
+    commit.commitAuthor
+  }" readonly=true></td>
 <td><input type="text" class="form-control commitdate" value="${
     commit.commitDate
   }" readonly=true></td>
@@ -190,9 +193,10 @@ function addFormBody(commit, mergeRequestPageURL) {
 }
 function addFormHeader() {
   return `
-  <th scope="col" style="width:5%">Checkbox</th>
-  <th scope="col" style="width:10%">Commit_SHA</th>
-  <th scope="col">Commit Date</th>
+  <th scope="col" style="width:4%">Checkbox</th>
+  <th scope="col" style="width:9%">Commit_SHA</th>
+  <th scope="col" style="width:20%" >Commit Author</th>
+  <th scope="col" style="width:22%">Commit Date</th>
   <th scope="col">Commit Message</th>
   <th scope="col" style="width:10%">PR Link</th>`;
 }
@@ -296,13 +300,55 @@ async function getDropdownURL(currentURLInput, currentURL) {
     currentURLInput.value = ``;
   }
 }
+function onCommitAuthorsEmpty(){
+  const authorEmptymessage = document.getElementById("author-empty-message");
+  authorEmptymessage.style.display = "block";
+}
+function deleteCommitAuthor(authorListDiv, commitAuthors, currentAuthorTag) {
+  authorListDiv.removeChild(currentAuthorTag);
+  delete commitAuthors[currentAuthorTag.id - 1];
+}
+function addCommitAuthor(authorListDiv, commitAuthors, currentAuthor) {
+  commitAuthors.push(currentAuthor);
+  const newAuthorTag = document.createElement("div");
+  newAuthorTag.classList.add("author-tag");
+  newAuthorTag.setAttribute("id", commitAuthors.length);
+  const authorTagContenr = document.createElement("div");
+  authorTagContenr.classList.add("author-tag-content");
+  authorTagContenr.innerHTML = currentAuthor;
+  newAuthorTag.appendChild(authorTagContenr);
+  const authorTagDelete = document.createElement("button");
+  authorTagDelete.setAttribute("type", "button");
+  authorTagDelete.classList.add("author-tag-delete");
+  authorTagDelete.innerHTML = "X";
+  authorTagDelete.addEventListener("click", () => {
+    deleteCommitAuthor(authorListDiv, commitAuthors, newAuthorTag);
+  });
+  newAuthorTag.appendChild(authorTagDelete);
+  authorListDiv.appendChild(newAuthorTag);
+}
+function getMultipleInputBox(commitAuthors) {
+  const commitAuthor = document.getElementById("commitAuthor");
+  const authorListDiv = document.getElementById("author-list");
+  const authorEmptymessage = document.getElementById("author-empty-message");
+  commitAuthor.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      authorListDiv.style.display = "flex";
+      authorEmptymessage.style.display = "none";
+      const currentAuthor = commitAuthor.value;
+      commitAuthor.value = "";
+      addCommitAuthor(authorListDiv, commitAuthors, currentAuthor);
+    }
+  });
+}
+
 const main = async () => {
   try {
-    await ajaxClient
-      .GET({
-        path: `handshake`,
-        requestType: "CLIRequest",
-      })
+    await ajaxClient.GET({
+      path: `handshake`,
+      requestType: "CLIRequest",
+    });
   } catch (e) {
     console.log(e);
     setHTMLContentInDesc(`Server not Initialised`);
@@ -315,22 +361,40 @@ const main = async () => {
     'input[name="location"]'
   );
   currentURLInput.value = `Loading...`;
+  let commitAuthors = [];
+  getMultipleInputBox(commitAuthors);
   getDropdownURL(currentURLInput, currentURL);
   cherryPickForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     disableAllFormButton();
     const formData = new FormData(e.target);
     const jsonInputBody = [...formData].reduce((jsonData, [key, value]) => {
-      if (key === "commitTime") value = value.replace("T", " ");
+      if (key === "commitTime"){
+         value = value.replace("T", " ");
+      }
+      else if (key === "commitAuthor") {
+        const selectedCommitAuthors = commitAuthors.filter(function (element) {
+          return element !== undefined;
+        });
+        jsonData[key] = selectedCommitAuthors;
+        return jsonData;
+      }
       jsonData[key] = value;
       return jsonData;
     }, {});
+    if(jsonInputBody.commitAuthor.length === 0){
+      console.log('Error');
+      onCommitAuthorsEmpty();
+      enableAllFormButton();
+      return;
+    }
     const commitForm = document.querySelector(".commit-form");
     if (commitForm != null) {
       document.body.removeChild(commitForm);
     }
 
     setHTMLContentInDesc(`Fetching Merge Commits`);
+    console.log(jsonInputBody);
     try {
       const res = await ajaxClient.POST({
         path: `mergecommits`,
