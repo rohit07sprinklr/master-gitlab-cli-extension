@@ -102,7 +102,11 @@ const ts = require('tail-stream');
       if (profileForm != null) {
         document.body.removeChild(profileForm);
       }
-      setContentInDesc(`${profiles.repos.length} Profiles Found!`);
+      const profilesFound =
+      profiles.repos.length > 1
+        ? `${profiles.repos.length} Profiles Found`
+        : `${profiles.repos.length} Profile Found`;
+    setContentInDesc(profilesFound);
       if (!profiles.repos.length) {
         document.querySelector(".btn-show-profile").innerText =
           "Get Active Profiles";
@@ -112,7 +116,7 @@ const ts = require('tail-stream');
       form.classList.add("profile-form");
       const tableDiv = document.createElement("div");
       tableDiv.classList.add("list-profiles");
-      tableDiv.style.height = "400px";
+      tableDiv.style.maxHeight = "400px";
       tableDiv.style.overflowY = "scroll";
       form.appendChild(tableDiv);
       const table = document.createElement("table");
