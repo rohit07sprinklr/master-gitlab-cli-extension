@@ -37,7 +37,7 @@ async function fetchCLIBuilder(method, path, jsonInputBody) {
 }
 
 export async function GET({
-  ORIGIN = "http://localhost:400",
+  ORIGIN = "http://localhost:4000",
   path,
   csrf_token = "",
   requestType,

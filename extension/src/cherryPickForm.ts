@@ -300,34 +300,34 @@ async function getDropdownURL(currentURLInput, currentURL) {
     currentURLInput.value = ``;
   }
 }
-function onCommitAuthorsEmpty(){
+function renderEmptyAuthorMessage(){
   const authorEmptymessage = document.getElementById("author-empty-message");
   authorEmptymessage.style.display = "block";
 }
-function deleteCommitAuthor(authorListDiv, commitAuthors, currentAuthorTag) {
-  authorListDiv.removeChild(currentAuthorTag);
-  delete commitAuthors[currentAuthorTag.id - 1];
+function deleteCommitAuthor(commitAuthorsList, authorTagContent) {
+  const authorIndex = commitAuthorsList.findIndex((author) => author === authorTagContent.innerText);
+  commitAuthorsList.splice(authorIndex,1);
 }
-function addCommitAuthor(authorListDiv, commitAuthors, currentAuthor) {
-  commitAuthors.push(currentAuthor);
-  const newAuthorTag = document.createElement("div");
-  newAuthorTag.classList.add("author-tag");
-  newAuthorTag.setAttribute("id", commitAuthors.length);
+function addCommitAuthor(authorListDiv, commitAuthorsList, currentAuthor) {
+  commitAuthorsList.push(currentAuthor);
+  const authorTagEl = document.createElement("div");
+  authorTagEl.classList.add("author-tag");
   const authorTagContent = document.createElement("div");
   authorTagContent.classList.add("author-tag-content");
   authorTagContent.innerHTML = currentAuthor;
-  newAuthorTag.appendChild(authorTagContent);
+  authorTagEl.appendChild(authorTagContent);
   const authorTagDelete = document.createElement("button");
   authorTagDelete.setAttribute("type", "button");
   authorTagDelete.classList.add("author-tag-delete");
   authorTagDelete.innerHTML = "X";
   authorTagDelete.addEventListener("click", () => {
-    deleteCommitAuthor(authorListDiv, commitAuthors, newAuthorTag);
+    authorListDiv.removeChild(authorTagEl);
+    deleteCommitAuthor(commitAuthorsList, authorTagContent);
   });
-  newAuthorTag.appendChild(authorTagDelete);
-  authorListDiv.appendChild(newAuthorTag);
+  authorTagEl.appendChild(authorTagDelete);
+  authorListDiv.appendChild(authorTagEl);
 }
-function getMultipleInputBox(commitAuthors) {
+function getMultipleInputBox(commitAuthorsList) {
   const commitAuthor = document.getElementById("commitAuthor");
   const authorListDiv = document.getElementById("author-list");
   const authorEmptymessage = document.getElementById("author-empty-message");
@@ -338,7 +338,7 @@ function getMultipleInputBox(commitAuthors) {
       authorEmptymessage.style.display = "none";
       const currentAuthor = commitAuthor.value;
       commitAuthor.value = "";
-      addCommitAuthor(authorListDiv, commitAuthors, currentAuthor);
+      addCommitAuthor(authorListDiv, commitAuthorsList, currentAuthor);
     }
   });
 }
@@ -350,7 +350,6 @@ const main = async () => {
       requestType: "CLIRequest",
     });
   } catch (e) {
-    console.log(e);
     setHTMLContentInDesc(`Server not Initialised`);
     disableAllFormButton();
     return false;
@@ -361,8 +360,8 @@ const main = async () => {
     'input[name="location"]'
   );
   currentURLInput.value = `Loading...`;
-  let commitAuthors = [];
-  getMultipleInputBox(commitAuthors);
+  const commitAuthorsList = [];
+  getMultipleInputBox(commitAuthorsList);
   getDropdownURL(currentURLInput, currentURL);
   cherryPickForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -373,18 +372,14 @@ const main = async () => {
          value = value.replace("T", " ");
       }
       else if (key === "commitAuthor") {
-        const selectedCommitAuthors = commitAuthors.filter(function (element) {
-          return element !== undefined;
-        });
-        jsonData[key] = selectedCommitAuthors;
+        jsonData[key] = commitAuthorsList;
         return jsonData;
       }
       jsonData[key] = value;
       return jsonData;
     }, {});
     if(jsonInputBody.commitAuthor.length === 0){
-      console.log('Error');
-      onCommitAuthorsEmpty();
+      renderEmptyAuthorMessage();
       enableAllFormButton();
       return;
     }
@@ -394,7 +389,6 @@ const main = async () => {
     }
 
     setHTMLContentInDesc(`Fetching Merge Commits`);
-    console.log(jsonInputBody);
     try {
       const res = await ajaxClient.POST({
         path: `mergecommits`,
