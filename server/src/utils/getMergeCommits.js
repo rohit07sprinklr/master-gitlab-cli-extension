@@ -9,6 +9,7 @@ async function getMergeCommits(
   localRepo
 ) {
   try {
+    const commitAuthorFormatted = commitAuthor.join('\\|');
     const path = localRepo.path;
     const url = localRepo.url;
     const pathName = new URL(url).pathname.slice(1);
@@ -16,9 +17,9 @@ async function getMergeCommits(
     const options = [
       "log",
       "--date=local",
-      "--pretty=format:%h--endline%ad--endline%s--endline%b%n--endcommit",
+      "--pretty=format:%h--endline%ae--endline%ad--endline%s--endline%b%n--endcommit",
       "--author",
-      commitAuthor,
+      commitAuthorFormatted,
       "--merges",
       "--since",
       commitTime,
@@ -50,15 +51,16 @@ async function getMergeCommits(
     for (const commitlog of commitlogs) {
       const commitInfo = commitlog.split("--endline");
       const matchString = pathName + "!";
-      const commitLogPathnameIndex = commitInfo[3].lastIndexOf(matchString);
+      const commitLogPathnameIndex = commitInfo[4].lastIndexOf(matchString);
       const commitJSONdata = {
         commitSHA: commitInfo[0],
-        commitDate: commitInfo[1],
-        commitMessage: commitInfo[2],
+        commitAuthor: commitInfo[1],
+        commitDate: commitInfo[2],
+        commitMessage: commitInfo[3],
         commitMergeRequestNumber: null,
       };
       if (commitLogPathnameIndex > -1) {
-        const mergeRequestNumber = commitInfo[3].slice(
+        const mergeRequestNumber = commitInfo[4].slice(
           commitLogPathnameIndex + matchString.length
         );
         commitJSONdata.commitMergeRequestNumber = mergeRequestNumber;

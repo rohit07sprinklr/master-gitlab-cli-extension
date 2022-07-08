@@ -176,6 +176,9 @@ function addFormBody(commit, mergeRequestPageURL) {
 <td><input type="text" class="form-control commitsha" value="${
     commit.commitSHA
   }" readonly=true></td>
+  <td><input type="text" class="form-control commitsha" value="${
+    commit.commitAuthor
+  }" readonly=true></td>
 <td><input type="text" class="form-control commitdate" value="${
     commit.commitDate
   }" readonly=true></td>
@@ -190,9 +193,10 @@ function addFormBody(commit, mergeRequestPageURL) {
 }
 function addFormHeader() {
   return `
-  <th scope="col" style="width:5%">Checkbox</th>
-  <th scope="col" style="width:10%">Commit_SHA</th>
-  <th scope="col">Commit Date</th>
+  <th scope="col" style="width:4%">Checkbox</th>
+  <th scope="col" style="width:9%">Commit_SHA</th>
+  <th scope="col" style="width:20%" >Commit Author</th>
+  <th scope="col" style="width:22%">Commit Date</th>
   <th scope="col">Commit Message</th>
   <th scope="col" style="width:10%">PR Link</th>`;
 }
@@ -296,15 +300,56 @@ async function getDropdownURL(currentURLInput, currentURL) {
     currentURLInput.value = ``;
   }
 }
+function renderEmptyAuthorMessage(){
+  const authorEmptymessage = document.getElementById("author-empty-message");
+  authorEmptymessage.style.display = "block";
+}
+function deleteCommitAuthor(commitAuthorsList, authorTagContent) {
+  const authorIndex = commitAuthorsList.findIndex((author) => author === authorTagContent.innerText);
+  commitAuthorsList.splice(authorIndex,1);
+}
+function addCommitAuthor(authorListDiv, commitAuthorsList, currentAuthor) {
+  commitAuthorsList.push(currentAuthor);
+  const authorTagEl = document.createElement("div");
+  authorTagEl.classList.add("author-tag");
+  const authorTagContent = document.createElement("div");
+  authorTagContent.classList.add("author-tag-content");
+  authorTagContent.innerHTML = currentAuthor;
+  authorTagEl.appendChild(authorTagContent);
+  const authorTagDelete = document.createElement("button");
+  authorTagDelete.setAttribute("type", "button");
+  authorTagDelete.classList.add("author-tag-delete");
+  authorTagDelete.innerHTML = "X";
+  authorTagDelete.addEventListener("click", () => {
+    authorListDiv.removeChild(authorTagEl);
+    deleteCommitAuthor(commitAuthorsList, authorTagContent);
+  });
+  authorTagEl.appendChild(authorTagDelete);
+  authorListDiv.appendChild(authorTagEl);
+}
+function getMultipleInputBox(commitAuthorsList) {
+  const commitAuthor = document.getElementById("commitAuthor");
+  const authorListDiv = document.getElementById("author-list");
+  const authorEmptymessage = document.getElementById("author-empty-message");
+  commitAuthor.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      authorListDiv.style.display = "flex";
+      authorEmptymessage.style.display = "none";
+      const currentAuthor = commitAuthor.value;
+      commitAuthor.value = "";
+      addCommitAuthor(authorListDiv, commitAuthorsList, currentAuthor);
+    }
+  });
+}
+
 const main = async () => {
   try {
-    await ajaxClient
-      .GET({
-        path: `handshake`,
-        requestType: "CLIRequest",
-      })
+    await ajaxClient.GET({
+      path: `handshake`,
+      requestType: "CLIRequest",
+    });
   } catch (e) {
-    console.log(e);
     setHTMLContentInDesc(`Server not Initialised`);
     disableAllFormButton();
     return false;
@@ -315,16 +360,29 @@ const main = async () => {
     'input[name="location"]'
   );
   currentURLInput.value = `Loading...`;
+  const commitAuthorsList = [];
+  getMultipleInputBox(commitAuthorsList);
   getDropdownURL(currentURLInput, currentURL);
   cherryPickForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     disableAllFormButton();
     const formData = new FormData(e.target);
     const jsonInputBody = [...formData].reduce((jsonData, [key, value]) => {
-      if (key === "commitTime") value = value.replace("T", " ");
+      if (key === "commitTime"){
+         value = value.replace("T", " ");
+      }
+      else if (key === "commitAuthor") {
+        jsonData[key] = commitAuthorsList;
+        return jsonData;
+      }
       jsonData[key] = value;
       return jsonData;
     }, {});
+    if(jsonInputBody.commitAuthor.length === 0){
+      renderEmptyAuthorMessage();
+      enableAllFormButton();
+      return;
+    }
     const commitForm = document.querySelector(".commit-form");
     if (commitForm != null) {
       document.body.removeChild(commitForm);
