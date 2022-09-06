@@ -37,7 +37,7 @@ function renderMergeButton(sourceBranch, targetBranch) {
     disableButtons();
     try {
       await fetchStream(
-        `merge?location=${window.location}&source=${encodeURIComponent(
+        `merge?location=${encodeURIComponent(window.location.origin + window.location.pathname)}&source=${encodeURIComponent(
           sourceBranch!
         )}&target=${encodeURIComponent(targetBranch!)}`,
         "GET",
